@@ -58,5 +58,42 @@ fi
 ```
 4. Создаем юнит для сервиса:
 ```
+[root@packages ~]# cat /etc/systemd/system/watchlog.service
+[Unit]
+Description=My watchlog service
 
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/sysconfig/watchlog
+ExecStart=/opt/watchlog.sh $WORD $LOG
+```
+5. Создаем юнит для таймера:
+```
+[root@packages ~]# cat /etc/systemd/system/watchlog.timer
+[Unit]
+Description=Run watchlog script every 30 second
+
+[Timer]
+# Run every 30 second
+OnUnitActiveSec=30
+Unit=watchlog.service
+
+[Install]
+WantedBy=multi-user.target
+```
+6. Стартуем таймер:
+```
+[root@nginx ~#] systemctl start watchlog.timer
+```
+7. Убеждаемся что всё работает как ожидалось:
+```
+[root@packages ~]# tail -f /var/log/messages
+Apr 21 17:44:20 packages systemd[1]: watchlog.service: Succeeded.
+Apr 21 17:44:20 packages systemd[1]: Started My watchlog service.
+Apr 21 17:45:00 packages systemd[1]: Starting My watchlog service...
+Apr 21 17:45:00 packages root[11482]: Sun Apr 21 17:45:00 UTC 2024: I found word, Master!
+Apr 21 17:45:00 packages systemd[1]: watchlog.service: Succeeded.
+Apr 21 17:45:00 packages systemd[1]: Started My watchlog service.
+Apr 21 17:45:30 packages systemd[1]: Starting My watchlog service...
+Apr 21 17:45:30 packages root[11500]: Sun Apr 21 17:45:30 UTC 2024: I found word, Master!
 ```
