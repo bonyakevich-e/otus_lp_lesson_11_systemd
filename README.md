@@ -85,7 +85,7 @@ WantedBy=multi-user.target
 ```
 [root@nginx ~#] systemctl start watchlog.timer
 ```
-7. Убеждаемся что всё работает как ожидалось:
+7. Проверяем что всё работает как ожидалось:
 ```
 [root@packages ~]# tail -f /var/log/messages
 Apr 21 17:44:20 packages systemd[1]: watchlog.service: Succeeded.
@@ -97,3 +97,63 @@ Apr 21 17:45:00 packages systemd[1]: Started My watchlog service.
 Apr 21 17:45:30 packages systemd[1]: Starting My watchlog service...
 Apr 21 17:45:30 packages root[11500]: Sun Apr 21 17:45:30 UTC 2024: I found word, Master!
 ```
+
+#### ЗАДАНИЕ 2. Установить spawn-fcgi и переписать init-скрипт на unit-файл (имя service должно называться так же: spawn-fcgi)
+
+1. Устанавливаем spawn-fcgi и необходимые для него пакеты:
+```
+[root@packages ~]# yum install epel-release -y && yum install spawn-fcgi php php-cli
+```
+`/etc/rc.d/init.d/spawn-fcgi` - cам Init скрипт, который будем переписывать
+
+2. Раскомментируем строки с переменными в /etc/sysconfig/spawn-fcgi:
+```
+[root@packages ~]# cat /etc/sysconfig/spawn-fcgi
+# You must set some working options before the "spawn-fcgi" service will work.
+# If SOCKET points to a file, then this file is cleaned up by the init script.
+#
+# See spawn-fcgi(1) for all possible options.
+#
+# Example :
+SOCKET=/var/run/php-fcgi.sock
+OPTIONS="-u apache -g apache -s $SOCKET -S -M 0600 -C 32 -F 1 -P /var/run/spawn-fcgi.pid -- /usr/bin/php-cgi"
+```
+3. Создаем юнит сервис для spawn-fcgi:
+```
+[root@packages ~]# cat /etc/systemd/system/spawn-fcgi.service
+[Unit]
+Description=Spawn-fcgi startup service by Otus
+After=network.target
+
+[Service]
+Type=simple
+PIDFile=/var/run/spawn-fcgi.pid
+EnvironmentFile=/etc/sysconfig/spawn-fcgi
+ExecStart=/usr/bin/spawn-fcgi -n $OPTIONS
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+```
+4. Проверяем что всё работает как ожидалось:
+```
+[root@packages ~]# systemctl start spawn-fcgi.service 
+[root@packages ~]# systemctl status spawn-fcgi.service 
+● spawn-fcgi.service - Spawn-fcgi startup service by Otus
+   Loaded: loaded (/etc/systemd/system/spawn-fcgi.service; disabled; vendor preset: disabled)
+   Active: active (running) since Sun 2024-04-21 18:00:09 UTC; 6s ago
+ Main PID: 36957 (php-cgi)
+    Tasks: 33 (limit: 100628)
+   Memory: 18.8M
+   CGroup: /system.slice/spawn-fcgi.service
+           ├─36957 /usr/bin/php-cgi
+           ├─36958 /usr/bin/php-cgi
+           ├─36959 /usr/bin/php-cgi
+           ├─36960 /usr/bin/php-cgi
+           ├─36961 /usr/bin/php-cgi
+           ├─36962 /usr/bin/php-cgi
+          ...
+          ...
+Apr 21 18:00:09 packages systemd[1]: Started Spawn-fcgi startup service by Otus.
+```
+
