@@ -156,4 +156,66 @@ WantedBy=multi-user.target
           ...
 Apr 21 18:00:09 packages systemd[1]: Started Spawn-fcgi startup service by Otus.
 ```
+#### ЗАДАНИЕ 3. Дополнить unit-файл httpd (он же apache2) возможностью запустить несколько инстансов сервера с разными конфигурационными файлами.
 
+1. Для запуска нескольких экземпляров сервиса будем использовать шаблон в конфигурации файла окружения /usr/lib/systemd/system/httpd.service:
+```
+[root@packages ~]# cat /usr/lib/systemd/system/httpd.service
+
+[Unit]
+Description=The Apache HTTP Server
+Wants=httpd-init.service
+After=network.target remote-fs.target nss-lookup.target httpd-init.service
+Documentation=man:httpd.service(8)
+
+[Service]
+Type=notify
+Environment=LANG=C
+
+ExecStart=/usr/sbin/httpd $OPTIONS -DFOREGROUND
+ExecReload=/usr/sbin/httpd $OPTIONS -k graceful
+# Send SIGWINCH for graceful stop
+KillSignal=SIGWINCH
+KillMode=mixed
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
+```
+2. Создаем два файла окружения, в которых задаем опции для запуска веб-серверов с необходимыми конфигурационными файлами:
+```
+[root@packages ~]# cat /etc/sysconfig/httpd-first 
+OPTIONS=-f conf/first.conf
+[root@packages ~]# cat /etc/sysconfig/httpd-second 
+OPTIONS=-f conf/second.conf
+```
+3. В каталоге /etc/httpd/conf создаем два конфигурационных файла first.conf и second.conf. В эих файлах указываем уникальные для каждого экземпляра Listen и PidFile. В первом оставляем как в оригинальном httpd.conf, второй редактируем:
+```
+[root@packages ~]# cat /etc/httpd/conf/second.conf
+
+Listen 8080
+PidFile /var/run/httpd-second.pid
+```
+4. Запускаем оба экземпляра веб-сервера:
+```
+[root@packages ~]# systemctl start httpd@first
+[root@packages ~]# systemctl start httpd@second
+[root@packages ~]# systemctl status httpd@first
+● httpd@first.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd@.service; disabled; vendor preset: disabled)
+   Active: active (running) since Sun 2024-04-21 18:20:12 UTC; 12s ago
+...
+...
+
+[root@packages ~]# systemctl status httpd@second
+● httpd@second.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd@.service; disabled; vendor preset: disabled)
+   Active: active (running) since Sun 2024-04-21 18:20:18 UTC; 13s ago
+...
+...
+
+[root@packages ~]# ss -lntup | grep httpd
+tcp   LISTEN 0      511                *:8080            *:*    users:(("httpd",pid=37450,fd=4),("httpd",pid=37449,fd=4),("httpd",pid=37448,fd=4),("httpd",pid=37446,fd=4))
+tcp   LISTEN 0      511                *:80              *:*    users:(("httpd",pid=37227,fd=4),("httpd",pid=37226,fd=4),("httpd",pid=37225,fd=4),("httpd",pid=37223,fd=4))
+```
