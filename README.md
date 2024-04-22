@@ -74,6 +74,7 @@ ExecStart=/opt/watchlog.sh $WORD $LOG
 Description=Run watchlog script every 30 second
 
 [Timer]
+OnActiveSec=5
 # Run every 30 second
 OnUnitActiveSec=30
 Unit=watchlog.service
@@ -81,6 +82,9 @@ Unit=watchlog.service
 [Install]
 WantedBy=multi-user.target
 ```
+>[!NOTE]
+>Если указать просто `OnUnitActiveSec=30`, то таймер не начнет выполняться пока не будет каким-то образом запущен сервис. Потому что OnUnitActiveSec определяет таймер относительно времени, когда последний раз был запущен сервис, на который ссылается этот таймер. Поэтому нужно как-то запустить один раз этот сервис. Либо вручную, либо добавляем OnActiveSec=5, который запустить таймер один раз через 5 секунд после его активации. Также для периодических выполнений заданий можно использовать OnCalendar, вместо OnUnitActiveSec.
+
 6. Стартуем таймер:
 ```
 [root@nginx ~#] systemctl start watchlog.timer
