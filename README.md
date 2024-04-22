@@ -1,4 +1,4 @@
-### OTUS Linux Professional Lesson #10 | Subject: Инициализация системы. Systemd
+### OTUS Linux Professional Lesson #12 | Subject: Инициализация системы. Systemd
 
 #### ЦЕЛЬ:
 1. Написать service, который будет раз в 30 секунд мониторить лог на предмет наличия ключевого слова (файл лога и ключевое слово должны задаваться в /etc/sysconfig или в /etc/default).
