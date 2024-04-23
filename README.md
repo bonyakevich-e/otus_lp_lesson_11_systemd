@@ -8,7 +8,7 @@
 >[!TIP]
 >В текущем репозитории все описанные ниже задачи выполняются автоматически при выполнении команды `vagrant up`. Во время выполнения этой команды:
 > - поднимается виртуальная машина с CentOS 8 Stream
-> - запускается ansible-playbook auto_configuration.yaml (файл inventory создается вагрантом автоматически и помещается в _.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory_, см. [The Inventory File](https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_intro)
+> - запускается ansible-playbook auto_configuration.yaml (файл inventory создается вагрантом автоматически и помещается в _.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory_, см. [The Inventory File](https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_intro#the-inventory-file)
 
 #### ЗАДАНИЕ 1:
 1.  Создаём файл с конфигурацией для сервиса в директории /etc/sysconfig - из неё сервис будет брать необходимые переменные
